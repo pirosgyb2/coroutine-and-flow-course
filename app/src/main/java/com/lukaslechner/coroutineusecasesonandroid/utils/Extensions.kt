@@ -7,6 +7,7 @@ import android.text.Spanned
 import android.view.View
 import android.view.inputmethod.InputMethodManager
 import android.widget.Toast
+import kotlin.coroutines.cancellation.CancellationException
 
 /**
  * Extension method to show toast for Context.
@@ -53,4 +54,14 @@ fun View.hideKeyboard(): Boolean {
     } catch (ignored: RuntimeException) {
     }
     return false
+}
+
+public inline suspend fun <R> runSuspendCatching(block: () -> R): Result<R> {
+    return try {
+        Result.success(block())
+    } catch(c: CancellationException) {
+        throw c
+    } catch (e: Throwable) {
+        Result.failure(e)
+    }
 }
