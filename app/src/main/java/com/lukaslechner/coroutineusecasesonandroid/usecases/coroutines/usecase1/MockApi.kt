@@ -14,4 +14,10 @@ fun mockApi() =
                 200,
                 1500
             )
+//            .mock(
+//                "http://localhost/recent-android-versions",
+//                { "Something went wrong" },
+//                500,
+//                1500
+//            )
     )
