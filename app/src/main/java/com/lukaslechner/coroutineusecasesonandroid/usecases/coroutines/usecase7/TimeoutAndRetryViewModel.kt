@@ -1,7 +1,16 @@
 package com.lukaslechner.coroutineusecasesonandroid.usecases.coroutines.usecase7
 
+import androidx.lifecycle.viewModelScope
 import com.lukaslechner.coroutineusecasesonandroid.base.BaseViewModel
 import com.lukaslechner.coroutineusecasesonandroid.mock.MockApi
+import com.lukaslechner.coroutineusecasesonandroid.utils.runSuspendCatching
+import kotlinx.coroutines.async
+import kotlinx.coroutines.awaitAll
+import kotlinx.coroutines.delay
+import kotlinx.coroutines.launch
+import kotlinx.coroutines.withTimeoutOrNull
+import timber.log.Timber
+import java.lang.Exception
 
 class TimeoutAndRetryViewModel(
     private val api: MockApi = mockApi()
@@ -12,10 +21,57 @@ class TimeoutAndRetryViewModel(
         val numberOfRetries = 2
         val timeout = 1000L
 
-        // TODO: Exercise 3
-        // switch to branch "coroutine_course_full" to see solution
+        val oreoDeferred = viewModelScope.async {
+            retryWithTimeout(timeout, numberOfRetries) {
+                api.getAndroidVersionFeatures(27)
+            }
+        }
 
-        // run api.getAndroidVersionFeatures(27) and api.getAndroidVersionFeatures(28) in parallel
+        val pieDeferred = viewModelScope.async {
+            retryWithTimeout(timeout, numberOfRetries) {
+                api.getAndroidVersionFeatures(28)
+            }
+        }
 
+        viewModelScope.launch {
+            val versionFeatures = awaitAll(
+                oreoDeferred,
+                pieDeferred
+            )
+
+            uiState.value = UiState.Success(versionFeatures.filterNotNull())
+        }
     }
+
+    private suspend fun <T> retryWithTimeout(
+        timeout: Long,
+        retries: Int,
+        block: suspend () -> T?
+    ): T? = retry(numberOfRetries = retries) {
+        withTimeoutOrNull(timeout) { block() }
+    }
+
+
+    private suspend fun <T> retry(
+        numberOfRetries: Int,
+        delayBetweenRetries: Long = 100L,
+        block: suspend () -> T
+    ): T {
+        val id = block.hashCode()
+        var attempt = 0
+
+        repeat(numberOfRetries) {
+            try {
+                Timber.e("#$attempt Attempt of $id")
+                return block()
+            } catch (e: Exception) {
+                Timber.e("$id got an error: $e")
+            }
+
+            attempt += 1
+            delay(delayBetweenRetries)
+        }
+        return block()
+    }
+
 }

@@ -56,7 +56,7 @@ fun View.hideKeyboard(): Boolean {
     return false
 }
 
-public inline suspend fun <R> runSuspendCatching(block: () -> R): Result<R> {
+public suspend inline fun <R> runSuspendCatching(block: suspend () -> R): Result<R> {
     return try {
         Result.success(block())
     } catch(c: CancellationException) {
