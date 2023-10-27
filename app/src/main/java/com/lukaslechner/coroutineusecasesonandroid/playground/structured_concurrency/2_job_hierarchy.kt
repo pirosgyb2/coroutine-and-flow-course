@@ -5,8 +5,9 @@ import kotlinx.coroutines.Dispatchers
 import kotlinx.coroutines.Job
 import kotlinx.coroutines.delay
 import kotlinx.coroutines.launch
+import kotlinx.coroutines.runBlocking
 
-fun main() {
+fun main() = runBlocking {
     val scopeJob = Job()
     val scope = CoroutineScope(Dispatchers.Default + scopeJob)
 
@@ -21,5 +22,6 @@ fun main() {
     println("passedJOb and coroutineJob are references to the same job object? => ${passedJob === coroutineJob}")
 
     println("Is coroutineJob is a child of scopeJOb? => ${scopeJob.children.contains(coroutineJob)}")
-    Thread.sleep(1000)
+
+    coroutineJob.join()
 }
